@@ -1,3 +1,4 @@
+import configparser
 import os
 import threading
 
@@ -6,14 +7,17 @@ import psutil
 import win32api
 from plexapi.server import PlexServer
 
-baseurl = 'http://127.0.0.1:32400'  # Your plex url here
-token = ''  # Your plex token here
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+baseurl = config['DEFAULT']['Url']
+token = config['DEFAULT']['Token']
 plex = PlexServer(baseurl, token)
 colorama.init()
 
-MAX_IDLE_TIME = 1800  # Max computer idle time in seconds. Default: 1800 ( 30 minutes )
-INTERVAL_DELAY = 60  # Delay between function interval in seconds. Default: 60
-SHUTDOWN_DELAY = 90  # Delay in seconds, should be bigger than interval delay. Default: 90
+MAX_IDLE_TIME = int(config['ADDITIONAL']['MaxIdle'])
+INTERVAL_DELAY = int(config['ADDITIONAL']['IntervalDelay'])
+SHUTDOWN_DELAY = int(config['ADDITIONAL']['ShutdownDelay'])
 SHUTDOWN_STATUS = False
 
 
@@ -52,13 +56,14 @@ def check_if_transcoder_running():
 
 def check_if_are_active_sessions():
     """ Returns true if there is any plex active session"""
-    return len(plex.sessions()) >= 0
+    return len(plex.sessions()) > 0
 
 
 def Start():
+    print(colorama.Fore.GREEN + '======================================')
     global SHUTDOWN_STATUS, SHUTDOWN_DELAY
     if SHUTDOWN_STATUS:
-        if check_if_idle_windows() < MAX_IDLE_TIME:
+        if check_if_idle_windows() < MAX_IDLE_TIME or check_if_are_active_sessions():
             print(colorama.Fore.GREEN + 'Auto-shutdown aborted')
             os.system('shutdown -a')
             SHUTDOWN_STATUS = False
@@ -85,4 +90,5 @@ def Start():
         SHUTDOWN_STATUS = True
 
 
+print(colorama.Fore.MAGENTA + 'Starting script...')
 set_interval(Start, INTERVAL_DELAY)
