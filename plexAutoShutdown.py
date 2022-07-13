@@ -2,7 +2,6 @@ import configparser
 import os
 import threading
 
-import colorama
 import psutil
 import win32api
 from plexapi.server import PlexServer
@@ -13,12 +12,12 @@ config.read('config.ini')
 baseurl = config['DEFAULT']['Url']
 token = config['DEFAULT']['Token']
 plex = PlexServer(baseurl, token)
-colorama.init()
 
 MAX_IDLE_TIME = int(config['ADDITIONAL']['MaxIdle'])
 INTERVAL_DELAY = int(config['ADDITIONAL']['IntervalDelay'])
 SHUTDOWN_DELAY = int(config['ADDITIONAL']['ShutdownDelay'])
 SHUTDOWN_STATUS = False
+ALLOW_EMOJIS = config['ADDITIONAL'].getboolean('ShowEmojis')
 
 
 def set_interval(fn, sec):
@@ -59,36 +58,42 @@ def check_if_are_active_sessions():
     return len(plex.sessions()) > 0
 
 
+def renderEmoji(emoji):
+    global ALLOW_EMOJIS
+    if ALLOW_EMOJIS:
+        return emoji + ' '
+    return ''
+
+
 def Start():
-    print(colorama.Fore.GREEN + '======================================')
     global SHUTDOWN_STATUS, SHUTDOWN_DELAY
     if SHUTDOWN_STATUS:
         if check_if_idle_windows() < MAX_IDLE_TIME or check_if_are_active_sessions():
-            print(colorama.Fore.GREEN + 'Auto-shutdown aborted')
+            print(renderEmoji('✅') + 'Auto-shutdown aborted')
             os.system('shutdown -a')
             SHUTDOWN_STATUS = False
 
-    print(colorama.Fore.BLUE + 'Checking status..')
+    print('Checking status..')
     if check_if_idle_windows() < MAX_IDLE_TIME:
-        print(colorama.Fore.BLUE + 'Computer not idle')
+        print(renderEmoji('❌') + 'Computer is in idle mode')
         return
-    print(colorama.Fore.BLUE + 'Computer idle')
+    print(renderEmoji('✔') + 'Computer is in idle mode')
 
     if not check_if_transcoder_running():
-        print(colorama.Fore.BLUE + 'Plex running')
+        print(renderEmoji('❌') + 'Plex transcoder is not running')
         return
-    print(colorama.Fore.BLUE + 'Plex transcoder not running')
+    print(renderEmoji('✔') + 'Plex transcoder is not running')
 
-    if not check_if_are_active_sessions():
-        print(colorama.Fore.BLUE + 'Plex active')
+    if check_if_are_active_sessions():
+        print(renderEmoji('❌') + 'No plex session is active')
         return
-    print(colorama.Fore.BLUE + 'No plex active sessions')
+    print(renderEmoji('✔') + 'No plex session is active')
 
     if not SHUTDOWN_STATUS:
-        print(colorama.Fore.RED + 'Auto-shutdown initiated')
+        print(renderEmoji('❎') + 'Auto-shutdown initiated')
         os.system('shutdown -s -t ' + str(SHUTDOWN_DELAY))
         SHUTDOWN_STATUS = True
 
 
-print(colorama.Fore.MAGENTA + 'Starting script...')
+print(renderEmoji('✅') + 'Starting script...')
 set_interval(Start, INTERVAL_DELAY)
