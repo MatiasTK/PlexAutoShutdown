@@ -1,0 +1,4 @@
+colorama==0.4.5
+PlexAPI==4.11.2
+psutil==5.9.0
+pywin32==304
