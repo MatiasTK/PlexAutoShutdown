@@ -1,11 +1,14 @@
 import configparser
+import msvcrt
 import os
 import threading
+import time
 
 import psutil
 import win32api
 from plexapi.server import PlexServer
 
+os.system('TITLE Plex Auto-Shutdown')
 config = configparser.ConfigParser()
 config.read('config.ini')
 
@@ -19,17 +22,29 @@ SHUTDOWN_DELAY = int(config['ADDITIONAL']['ShutdownDelay'])
 SHUTDOWN_STATUS = False
 ALLOW_EMOJIS = config['ADDITIONAL'].getboolean('ShowEmojis')
 
+THREAD_RUNNING = True
 
-def set_interval(fn, sec):
-    """ Repeatedly calls a function or executes with a fixed time delay between each call. """
+# OLD METHOD
+# def set_interval(fn, sec):
+#     """ Repeatedly calls a function or executes with a fixed time delay between each call. """
 
-    def func_wrapper():
-        set_interval(fn, sec)
-        fn()
+#     def func_wrapper():
+#         set_interval(fn, sec)
+#         fn()
 
-    t = threading.Timer(sec, func_wrapper)
-    t.start()
-    return t
+#     t = threading.Timer(sec, func_wrapper)
+#     t.start()
+#     return t
+
+def run_code_forever():
+    global THREAD_RUNNING
+
+    while THREAD_RUNNING:
+        time.sleep(INTERVAL_DELAY)
+        start()
+
+def listen_keypress():
+    msvcrt.getch()
 
 
 def check_if_idle_windows():
@@ -58,42 +73,54 @@ def check_if_are_active_sessions():
     return len(plex.sessions()) > 0
 
 
-def renderEmoji(emoji):
+def render_emoji(emoji):
     global ALLOW_EMOJIS
     if ALLOW_EMOJIS:
         return emoji + ' '
     return ''
 
 
-def Start():
+def start():
     global SHUTDOWN_STATUS, SHUTDOWN_DELAY
     if SHUTDOWN_STATUS:
         if check_if_idle_windows() < MAX_IDLE_TIME or check_if_are_active_sessions():
-            print(renderEmoji('✅') + 'Auto-shutdown aborted')
+            print(render_emoji('❎') + 'Auto-shutdown aborted')
             os.system('shutdown -a')
             SHUTDOWN_STATUS = False
 
-    print('Checking status..')
+    print('\nChecking status..')
     if check_if_idle_windows() < MAX_IDLE_TIME:
-        print(renderEmoji('❌') + 'Computer is in idle mode')
+        print(render_emoji('❌') + 'Computer is not in idle mode')
         return
-    print(renderEmoji('✔') + 'Computer is in idle mode')
+    print(render_emoji('✔') + 'Computer is in idle mode')
 
     if not check_if_transcoder_running():
-        print(renderEmoji('❌') + 'Plex transcoder is not running')
+        print(render_emoji('❌') + 'Plex transcoder is running')
         return
-    print(renderEmoji('✔') + 'Plex transcoder is not running')
+    print(render_emoji('✔') + 'Plex transcoder is not running')
 
     if check_if_are_active_sessions():
-        print(renderEmoji('❌') + 'No plex session is active')
+        print(render_emoji('❌') + 'There are an active plex session')
         return
-    print(renderEmoji('✔') + 'No plex session is active')
+    print(render_emoji('✔') + 'No plex session is active')
 
     if not SHUTDOWN_STATUS:
-        print(renderEmoji('❎') + 'Auto-shutdown initiated')
+        print(render_emoji('✅') + 'Auto-shutdown initiated, computer will shutdown in ' + str(SHUTDOWN_DELAY) + ' seconds')
         os.system('shutdown -s -t ' + str(SHUTDOWN_DELAY))
         SHUTDOWN_STATUS = True
 
+if __name__ == '__main__':
+    print(render_emoji('✅') + 'Starting script...')
+    print(render_emoji('🔔') + 'Press any key to cancel')
 
-print(renderEmoji('✅') + 'Starting script...')
-set_interval(Start, INTERVAL_DELAY)
+    t1 = threading.Thread(target=run_code_forever)
+    t2 = threading.Thread(target=msvcrt.getch)
+
+    t1.start()
+    t2.start()
+
+    t2.join()
+    THREAD_RUNNING = False
+    print(render_emoji('❗') + 'Closing script...')
+    t1.join()
+    print(render_emoji('💖') + 'Thanks for using this script')

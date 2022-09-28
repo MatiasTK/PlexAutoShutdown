@@ -1,5 +1,6 @@
+.vscode
 dist
-build
 venv
-TODO.md
-.idea
+config.ini
+Howtocompile.md
+RUN.bat
