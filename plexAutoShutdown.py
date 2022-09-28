@@ -24,28 +24,12 @@ ALLOW_EMOJIS = config['ADDITIONAL'].getboolean('ShowEmojis')
 
 THREAD_RUNNING = True
 
-# OLD METHOD
-# def set_interval(fn, sec):
-#     """ Repeatedly calls a function or executes with a fixed time delay between each call. """
-
-#     def func_wrapper():
-#         set_interval(fn, sec)
-#         fn()
-
-#     t = threading.Timer(sec, func_wrapper)
-#     t.start()
-#     return t
-
 def run_code_forever():
     global THREAD_RUNNING
 
     while THREAD_RUNNING:
         time.sleep(INTERVAL_DELAY)
         start()
-
-def listen_keypress():
-    msvcrt.getch()
-
 
 def check_if_idle_windows():
     """ Returns computer idle time in seconds"""
