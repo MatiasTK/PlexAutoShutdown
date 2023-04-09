@@ -1,3 +1,4 @@
-PlexAPI==4.11.2
-psutil==5.9.0
+PlexAPI==4.13.4
+psutil==5.9.4
 pywin32==304
+windows-toasts==0.4.0
