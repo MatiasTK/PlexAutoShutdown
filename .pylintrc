@@ -1,0 +1,3 @@
+[MAIN]
+max-line-length=150
+extension-pkg-whitelist=win32api

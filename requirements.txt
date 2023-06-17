@@ -1,4 +1,5 @@
-PlexAPI==4.13.4
-psutil==5.9.4
-pywin32==304
-windows-toasts==0.4.0
+Pillow==9.5.0
+PlexAPI==4.14.0
+pystray==0.19.4
+pywin32==306
+win11toast==0.32

@@ -38,16 +38,4 @@ If all of the above is true then the script sets a shutdown with a `ShutdownDela
 
 ## Additional Configurations
 
-You can also change the following variables in the config.ini: `MAX_IDLE_TIME`, `INTERVAL_DELAY`, `SHUTDOWN_DELAY`, `SHOW_EMOJIS`.
-
-## How to fix the top left notification
-
-In order to fix the top left notification which says command prompt you should generate an Appllication User Model ID (AUMID) to do this:
-
-1. You need to clone this repo to get the icons
-2. **Make sure you have an icon.ico file inside the icons folder**
-3. Run the following command
-
-   ```powershell
-   python register_hkey_aumid.py
-   ```
+You can also change the following variables in the config.ini: `MAX_IDLE_TIME`, `INTERVAL_DELAY`, `SHUTDOWN_DELAY`.
