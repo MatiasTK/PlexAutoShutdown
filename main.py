@@ -187,6 +187,7 @@ def main():
     plex_url, plex_token, idle_time, interval_execution, shutdown_delay = load_config(config)
 
     if plex_url == "" or plex_token == "":
+        toast("Plex Auto-Shutdown","Please fill config file", icon={"src": ICO, "placement": "appLogoOverride"})
         print("Please fill config file")
         return
 
