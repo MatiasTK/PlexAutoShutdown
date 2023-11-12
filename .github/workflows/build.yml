@@ -1,0 +1,24 @@
+name: Package Application with Pyinstaller
+
+on:
+  push:
+    branches: [dev]
+  pull_request:
+    branches: [dev]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Package Application
+        uses: JackMcKew/pyinstaller-action-windows@main
+        with:
+          path: ${{ secrets.GITHUB_WORKSPACE }}
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Plex.Auto.Shutdown
+          path: src/dist/windows
