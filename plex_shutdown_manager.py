@@ -2,13 +2,13 @@
 from __future__ import annotations
 
 import os
+import subprocess
 from time import sleep
 from typing import TYPE_CHECKING
 
-from win32api import GetLastInputInfo, GetTickCount
-from win32com.client import GetObject
-
 from win11toast import toast
+
+from idle import get_idle_duration
 
 if TYPE_CHECKING:
     from app import App
@@ -40,16 +40,29 @@ class PlexShutdownManager:
             return False
         plex_running = False
         transcoder_running = False
-
-        wmi = GetObject("winmgmts:")
-        processes = wmi.InstancesOf("Win32_Process")
-
-        for process in processes:
-            if process.Properties_("Name").Value == "Plex Media Server.exe":
+        try:
+            # Run the tasklist command and capture the output
+            result = subprocess.run(
+                ["tasklist", "/fi", f"imagename eq {'Plex Media Server.exe'}"],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            # Check if the process name is in the output
+            if "Plex Media Server.exe".lower() in result.stdout.lower():
                 plex_running = True
-            if process.Properties_("Name").Value == "Plex Transcoder.exe":
-                transcoder_running = True
 
+            subprocess.run(
+                ["tasklist", "/fi", f"imagename eq {'Plex Transcoder.exe'}"],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            if "Plex Transcoder.exe".lower() in result.stdout.lower():
+                transcoder_running = True
+        except Exception as e:
+            print(f"Error checking process: {e}")
+            return False
         return plex_running and not transcoder_running
 
     def minutes_to_seconds(self, minutes):
@@ -70,32 +83,28 @@ class PlexShutdownManager:
             + str(time_in_minutes)
             + " seconds"
         )
-        os.system("shutdown -s -t " + str(self.minutes_to_seconds(time_in_minutes)))
+        os.system(
+            "shutdown -s -t " + str(int(self.minutes_to_seconds(time_in_minutes)))
+        )
         self.shutdown_enabled = True
-
-    def get_idle_time(self):
-        """Returns computer idle time in seconds"""
-        idle_time = (GetTickCount() - GetLastInputInfo()) / 1000.0
-        return idle_time
 
     def monitor_plex_and_shutdown(self):
         """Checks if there is any active plex session and if the computer is in idle mode, if both are true it will shutdown the computer after the given delay"""
-        print(f"SHUTDOWN STATUS {self.app.get_shutdown_status()}")
         if not self.app.get_shutdown_status():
             return
 
-        print("Monitoring...")  # TODO: Quitar
+        print("Monitoring...")
         max_idle_seconds = self.minutes_to_seconds(self.app.get_computer_idle())
 
         if self.shutdown_enabled:
             if (
-                self.get_idle_time() < max_idle_seconds
+                get_idle_duration() < max_idle_seconds
                 or self.check_if_are_active_sessions()
             ):
                 self.cancel_shutdown()
 
         if max_idle_seconds != 0:
-            if self.get_idle_time() < max_idle_seconds:
+            if get_idle_duration() < max_idle_seconds:
                 print("Computer is not in idle mode")
                 return
             print("Computer is in idle mode")
@@ -117,8 +126,5 @@ class PlexShutdownManager:
         """Main loop for the monitor thread"""
         self.app = tkinter_app
         while True:
-            print(
-                f"MONITOR LOOP STARTED - Checking every {self.app.get_interval_delay()}"
-            )  # TODO: Quitar
             self.monitor_plex_and_shutdown()
             sleep(self.minutes_to_seconds(self.app.get_interval_delay()))

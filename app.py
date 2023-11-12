@@ -11,7 +11,14 @@ from plexapi.server import PlexServer
 from pystray import MenuItem as item
 from win11toast import toast
 
-from config import write_config
+from config import (
+    write_config,
+    default_computer_idle,
+    default_interval_delay,
+    default_plex_token,
+    default_plex_url,
+    default_shutdown_delay,
+)
 
 customtkinter.set_appearance_mode("dark")
 
@@ -26,11 +33,11 @@ class App(customtkinter.CTk):
     plex_shutdown_manager: PlexShutdownManager = None
     shutdown_switch_enabled = False
     shutdown_switch_on_show_end_enabled = False
-    plex_url = ""
-    plex_token = ""
-    shutdown_delay = 0
-    interval_delay = 0
-    computer_idle = 0
+    plex_url = default_plex_url
+    plex_token = default_plex_token
+    shutdown_delay = default_shutdown_delay
+    interval_delay = default_interval_delay
+    computer_idle = default_computer_idle
 
     def __init__(
         self,
@@ -42,11 +49,13 @@ class App(customtkinter.CTk):
         plex_shutdown_manager,
     ):
         super().__init__(fg_color="#2b2b2b")
-        try:  # ? Deberia ir esta logica aca?
-            self.plex = PlexServer(plex_url, plex_token)
-        except ConnectionError:
-            self.show_error("Connection error")
-            return
+        if plex_token != default_plex_token:
+            try:
+                self.plex = PlexServer(plex_url, plex_token)
+            except ConnectionError:
+                self.show_error("Connection error")
+            except:
+                self.show_error("Unknown error, maybe you are using an unvalid token")
 
         self.plex_url = plex_url
         self.plex_token = plex_token
@@ -117,6 +126,27 @@ class App(customtkinter.CTk):
         interval_delay_entry.grid(row=5, column=1, padx=10, pady=(0, 10))
         interval_delay_entry.insert(0, self.interval_delay)
 
+        # Idle Time
+        customtkinter.CTkLabel(self, text="After Idle time (minutes)").grid(
+            row=6, column=0, padx=10, pady=(10, 0)
+        )
+        max_idle_delay_entry = customtkinter.CTkEntry(self)
+        max_idle_delay_entry.grid(row=7, column=0, padx=10, pady=(0, 10))
+        max_idle_delay_entry.insert(0, self.computer_idle)
+
+        # Reset Default Values
+        customtkinter.CTkButton(
+            self,
+            text="Reset Default Values",
+            command=lambda: self.reset_settings(
+                plex_url_entry,
+                plex_token_entry,
+                shutdown_delay_entry,
+                interval_delay_entry,
+                max_idle_delay_entry,
+            ),
+        ).grid(row=7, column=1, padx=10, pady=10)
+
         # Apply Settings
         customtkinter.CTkButton(
             self,
@@ -126,8 +156,9 @@ class App(customtkinter.CTk):
                 plex_token_entry,
                 shutdown_delay_entry,
                 interval_delay_entry,
+                max_idle_delay_entry,
             ),
-        ).grid(row=6, column=0, columnspan=6, padx=10, pady=10)
+        ).grid(row=8, column=0, columnspan=6, padx=10, pady=10)
 
         # Author
         author_label = customtkinter.CTkLabel(
@@ -139,7 +170,7 @@ class App(customtkinter.CTk):
         author_label.bind(
             "<Button-1>", command=lambda e: self.open_url("https://github.com/MatiasTK")
         )
-        author_label.grid(row=8, column=0, padx=10, pady=10)
+        author_label.grid(row=10, column=0, padx=10, pady=10)
 
         # How to get token label
         how_to_get_token_label = customtkinter.CTkLabel(
@@ -154,7 +185,7 @@ class App(customtkinter.CTk):
                 "https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/"
             ),
         )
-        how_to_get_token_label.grid(row=8, column=1, padx=10, pady=10)
+        how_to_get_token_label.grid(row=10, column=1, padx=10, pady=10)
 
     def hide_window(self):
         """Hides the window and shows the icon in the system tray"""
@@ -198,7 +229,7 @@ class App(customtkinter.CTk):
         error_label = customtkinter.CTkLabel(
             self, text=f"Error: {message}", text_color="red", font=("Arial", 12, "bold")
         )
-        error_label.grid(row=7, column=0, columnspan=2, padx=10, pady=10)
+        error_label.grid(row=9, column=0, columnspan=2, padx=10, pady=10)
         self.after(5000, error_label.destroy)
 
     def show_success(self, message):
@@ -209,28 +240,31 @@ class App(customtkinter.CTk):
             text_color="green",
             font=("Arial", 12, "bold"),
         )
-        success_label.grid(row=7, column=0, columnspan=2, padx=10, pady=10)
+        success_label.grid(row=9, column=0, columnspan=2, padx=10, pady=10)
         self.after(5000, success_label.destroy)
 
     def apply_settings(
-        self, url_entry, token_entry, shutdown_delay_entry, interval_delay_entry
+        self,
+        url_entry,
+        token_entry,
+        shutdown_delay_entry,
+        interval_delay_entry,
+        max_idle_delay_entry,
     ):
         """Applies the settings to the program"""
         self.plex_token = token_entry.get()
-        if self.plex_token == "":
-            self.show_error("Token can't be empty")
+        if self.plex_token == "Your Plex Token Here":
+            self.show_error("You need to enter a valid Plex Token first")
             return
         self.plex_shutdown_manager.cancel_shutdown()
         self.shutdown_switch_enabled = False
         self.shutdown_switch_on_show_end_enabled = False
         self.plex_url = url_entry.get()
-        self.computer_idle = float(shutdown_delay_entry.get())
+        self.computer_idle = float(max_idle_delay_entry.get())
         self.interval_delay = float(interval_delay_entry.get())
         self.shutdown_delay = float(shutdown_delay_entry.get())
         try:
-            self.plex = PlexServer(
-                self.plex_url, self.plex_token
-            )  # ? Deberia ir esta logica aca?
+            self.plex = PlexServer(self.plex_url, self.plex_token)
             write_config(
                 self.plex_url,
                 self.plex_token,
@@ -242,6 +276,48 @@ class App(customtkinter.CTk):
         except ConnectionError:
             self.show_error("Connection error")
             return
+        except:
+            self.show_error("Unknown error, maybe you are using an unvalid token")
+            return
+
+    def reset_settings(
+        self,
+        url_entry,
+        token_entry,
+        shutdown_delay_entry,
+        interval_delay_entry,
+        max_idle_delay_entry,
+    ):
+        """Resets the settings to the default values"""
+        self.plex_token = default_plex_token
+        self.plex_url = default_plex_url
+        self.computer_idle = default_computer_idle
+        self.interval_delay = default_interval_delay
+        self.shutdown_delay = default_shutdown_delay
+
+        url_entry.delete(0, "end")
+        url_entry.insert(0, self.plex_url)
+
+        token_entry.delete(0, "end")
+        token_entry.insert(0, self.plex_token)
+
+        shutdown_delay_entry.delete(0, "end")
+        shutdown_delay_entry.insert(0, self.shutdown_delay)
+
+        interval_delay_entry.delete(0, "end")
+        interval_delay_entry.insert(0, self.interval_delay)
+
+        max_idle_delay_entry.delete(0, "end")
+        max_idle_delay_entry.insert(0, self.computer_idle)
+
+        write_config(
+            self.plex_url,
+            self.plex_token,
+            self.computer_idle,
+            self.interval_delay,
+            self.shutdown_delay,
+        )
+        self.show_success("Settings reseted")
 
     def open_url(self, url):
         """Opens a web browser with the given url"""

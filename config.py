@@ -6,7 +6,7 @@ default_computer_idle = 30
 default_interval_delay = 1
 default_shutdown_delay = 30
 default_plex_url = "http://127.0.0.1:32400"
-default_plex_token = ""
+default_plex_token = "Your Plex Token Here"
 
 
 def load_config():
