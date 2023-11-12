@@ -1,3 +1,4 @@
+""" Config file for PlexAutoShutdown """
 import configparser
 from os import path
 import sys
@@ -14,19 +15,20 @@ def resource_path(relative_path):
     return path.join(base_path, relative_path)
 
 
-config_file_path = "PlexAutoShutdownConfig.ini"
-default_computer_idle = 30
-default_interval_delay = 1
-default_shutdown_delay = 30
-default_plex_url = "http://127.0.0.1:32400"
-default_plex_token = "Your Plex Token Here"
+CONFIG_FILE_PATH = "PlexAutoShutdownConfig.ini"
+DEFAULT_COMPUTER_IDLE = 30
+DEFAULT_INTERVAL_DELAY = 1
+DEFAULT_SHUTDOWN_DELAY = 30
+DEFAULT_PLEX_URL = "http://127.0.0.1:32400"
+DEFAULT_PLEX_TOKEN = "Your Plex Token Here"
 
 
 def load_config():
-    if path.exists(config_file_path):
+    """Loads the config file and returns the values"""
+    if path.exists(CONFIG_FILE_PATH):
         print("Config file exists")
         config = configparser.ConfigParser()
-        config.read(config_file_path)
+        config.read(CONFIG_FILE_PATH)
         plex_url = config["DEFAULT"]["Url"]
         plex_token = config["DEFAULT"]["Token"]
         computer_idle = float(config["ADDITIONAL"]["MaxIdle"])
@@ -36,16 +38,17 @@ def load_config():
     else:
         print("Config file does not exist")
         return (
-            default_plex_url,
-            default_plex_token,
-            default_computer_idle,
-            default_interval_delay,
-            default_shutdown_delay,
+            DEFAULT_PLEX_URL,
+            DEFAULT_PLEX_TOKEN,
+            DEFAULT_COMPUTER_IDLE,
+            DEFAULT_INTERVAL_DELAY,
+            DEFAULT_SHUTDOWN_DELAY,
         )
 
 
 def write_config(plex_url, plex_token, computer_idle, interval_delay, shutdown_delay):
-    with open(config_file_path, "w", encoding="utf-8") as config_file:
+    """Writes the config file"""
+    with open(CONFIG_FILE_PATH, "w", encoding="utf-8") as config_file:
         config_file.write(
             f"""[DEFAULT]
 Url = {plex_url}

@@ -1,7 +1,6 @@
-""" This file contains all the functions related to the plex monitor and shutdown """
+""" This file contains all the functions related to the Plex monitor and shutdown """
 from __future__ import annotations
 
-import os
 import subprocess
 from time import sleep
 from typing import TYPE_CHECKING
@@ -15,6 +14,8 @@ if TYPE_CHECKING:
 
 
 class PlexShutdownManager:
+    """This class contains all the functions related to the Plex monitor and shutdown"""
+
     shutdown_enabled = False
     app: App = None
 
@@ -22,7 +23,7 @@ class PlexShutdownManager:
         self.shutdown_enabled = False
 
     def check_if_are_active_sessions(self):
-        """Returns true if there is any plex active session"""
+        """Returns true if there is any Plex active session"""
         if self.app.get_plex_instance() is None:
             self.app.show_error(
                 self.app,
@@ -32,7 +33,7 @@ class PlexShutdownManager:
         return len(self.app.get_plex_instance().sessions()) > 0
 
     def check_if_transcoder_running(self):
-        """Returns true if plex is running and transcoder not"""
+        """Returns true if Plex is running and transcoder not"""
         if self.app.get_plex_instance() is None:
             self.app.show_error(
                 self, "Cannot check if there are active sessions, Plex connection error"
@@ -41,7 +42,7 @@ class PlexShutdownManager:
         plex_running = False
         transcoder_running = False
         try:
-            # Run the tasklist command and capture the output
+            # Run the task list command and capture the output
             result = subprocess.run(
                 ["tasklist", "/fi", f"imagename eq {'Plex Media Server.exe'}"],
                 capture_output=True,
@@ -89,10 +90,6 @@ class PlexShutdownManager:
             + str(time_in_minutes)
             + " seconds"
         )
-        """ os.system(
-            "shutdown -s -t "
-            + str(int(self.minutes_to_seconds(time_in_minutes)) + '-c " "')
-        ) """
         subprocess.run(
             [
                 "shutdown",
@@ -108,7 +105,7 @@ class PlexShutdownManager:
         self.shutdown_enabled = True
 
     def monitor_plex_and_shutdown(self):
-        """Checks if there is any active plex session and if the computer is in idle mode, if both are true it will shutdown the computer after the given delay"""
+        """Checks if there is any active Plex session and if the computer is in idle mode it will shutdown the computer after the given delay"""
         if not self.app.get_shutdown_status():
             return
 

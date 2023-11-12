@@ -12,11 +12,11 @@ from pystray import MenuItem as item
 from win11toast import toast
 
 from config import (
-    default_computer_idle,
-    default_interval_delay,
-    default_plex_token,
-    default_plex_url,
-    default_shutdown_delay,
+    DEFAULT_COMPUTER_IDLE,
+    DEFAULT_INTERVAL_DELAY,
+    DEFAULT_PLEX_TOKEN,
+    DEFAULT_PLEX_URL,
+    DEFAULT_SHUTDOWN_DELAY,
     resource_path,
     write_config,
 )
@@ -34,11 +34,11 @@ class App(customtkinter.CTk):
     plex_shutdown_manager: PlexShutdownManager = None
     shutdown_switch_enabled = False
     shutdown_switch_on_show_end_enabled = False
-    plex_url = default_plex_url
-    plex_token = default_plex_token
-    shutdown_delay = default_shutdown_delay
-    interval_delay = default_interval_delay
-    computer_idle = default_computer_idle
+    plex_url = DEFAULT_PLEX_URL
+    plex_token = DEFAULT_PLEX_TOKEN
+    shutdown_delay = DEFAULT_SHUTDOWN_DELAY
+    interval_delay = DEFAULT_INTERVAL_DELAY
+    computer_idle = DEFAULT_COMPUTER_IDLE
 
     def __init__(
         self,
@@ -50,7 +50,7 @@ class App(customtkinter.CTk):
         plex_shutdown_manager,
     ):
         super().__init__(fg_color="#2b2b2b")
-        if plex_token != default_plex_token:
+        if plex_token != DEFAULT_PLEX_TOKEN:
             try:
                 self.plex = PlexServer(plex_url, plex_token)
             except ConnectionError:
@@ -306,11 +306,11 @@ class App(customtkinter.CTk):
         auto_shutdown_on_show_end_label,
     ):
         """Resets the settings to the default values"""
-        self.plex_token = default_plex_token
-        self.plex_url = default_plex_url
-        self.computer_idle = default_computer_idle
-        self.interval_delay = default_interval_delay
-        self.shutdown_delay = default_shutdown_delay
+        self.plex_token = DEFAULT_PLEX_TOKEN
+        self.plex_url = DEFAULT_PLEX_URL
+        self.computer_idle = DEFAULT_COMPUTER_IDLE
+        self.interval_delay = DEFAULT_INTERVAL_DELAY
+        self.shutdown_delay = DEFAULT_SHUTDOWN_DELAY
 
         url_entry.delete(0, "end")
         url_entry.insert(0, self.plex_url)
