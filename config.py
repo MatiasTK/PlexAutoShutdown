@@ -1,7 +1,20 @@
 import configparser
 from os import path
+import sys
 
-config_file_path = path.join(path.dirname(__file__), "PlexAutoShutdownConfig.ini")
+
+def resource_path(relative_path):
+    """Get the absolute path to the resource, works for dev and for PyInstaller"""
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = path.abspath(".")
+
+    return path.join(base_path, relative_path)
+
+
+config_file_path = "PlexAutoShutdownConfig.ini"
 default_computer_idle = 30
 default_interval_delay = 1
 default_shutdown_delay = 30
@@ -23,10 +36,9 @@ def load_config():
     else:
         print("Config file does not exist")
         return (
-            None,
-            default_computer_idle,
             default_plex_url,
             default_plex_token,
+            default_computer_idle,
             default_interval_delay,
             default_shutdown_delay,
         )

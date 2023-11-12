@@ -12,12 +12,13 @@ from pystray import MenuItem as item
 from win11toast import toast
 
 from config import (
-    write_config,
     default_computer_idle,
     default_interval_delay,
     default_plex_token,
     default_plex_url,
     default_shutdown_delay,
+    resource_path,
+    write_config,
 )
 
 customtkinter.set_appearance_mode("dark")
@@ -67,7 +68,7 @@ class App(customtkinter.CTk):
 
         self.title("Plex Auto Shutdown")
         self.resizable(False, False)
-        self.iconbitmap("./icons/app.ico")
+        self.iconbitmap(resource_path("./icons/app.ico"))
 
         self.protocol("WM_DELETE_WINDOW", self.hide_window)
 
@@ -84,15 +85,16 @@ class App(customtkinter.CTk):
         auto_shutdown_label.grid(row=0, column=1, padx=10, pady=(20, 10))
 
         # Auto Shutdown on Show End
+        auto_shutdown_on_show_end_label = customtkinter.CTkLabel(
+            self,
+            text=f"Shutdown when show ends is: {'ON' if self.shutdown_switch_on_show_end_enabled else 'OFF'}",
+        )
+        auto_shutdown_on_show_end_label.grid(row=1, column=1, padx=10, pady=10)
         customtkinter.CTkButton(
             self,
             text="Shutdown when show ends",
             command=lambda: self.show_error("Not implemented yet"),
         ).grid(row=1, column=0, padx=10, pady=10)
-        customtkinter.CTkLabel(
-            self,
-            text=f"Shutdown when show ends is: {'ON' if self.shutdown_switch_on_show_end_enabled else 'OFF'}",
-        ).grid(row=1, column=1, padx=10, pady=10)
 
         # Plex URL
         customtkinter.CTkLabel(self, text="Plex URL").grid(
@@ -144,6 +146,8 @@ class App(customtkinter.CTk):
                 shutdown_delay_entry,
                 interval_delay_entry,
                 max_idle_delay_entry,
+                auto_shutdown_label,
+                auto_shutdown_on_show_end_label,
             ),
         ).grid(row=7, column=1, padx=10, pady=10)
 
@@ -157,6 +161,8 @@ class App(customtkinter.CTk):
                 shutdown_delay_entry,
                 interval_delay_entry,
                 max_idle_delay_entry,
+                auto_shutdown_label,
+                auto_shutdown_on_show_end_label,
             ),
         ).grid(row=8, column=0, columnspan=6, padx=10, pady=10)
 
@@ -191,7 +197,7 @@ class App(customtkinter.CTk):
         """Hides the window and shows the icon in the system tray"""
         self.withdraw()
 
-        image = Image.open("./icons/plex.png")
+        image = Image.open(resource_path("./icons/plex.png"))
         menu = (
             item("Show", self.show_window, default=True),
             item("Quit", self.quit_window),
@@ -221,7 +227,7 @@ class App(customtkinter.CTk):
             label.configure(text="Auto Shutdown is currently: ON")
         else:
             self.plex_shutdown_manager.cancel_shutdown()
-            self.show_success("Auto Shutdown Disabled")
+            self.show_success("Auto Shutdown is now OFF")
             label.configure(text="Auto Shutdown is currently: OFF")
 
     def show_error(self, message):
@@ -250,6 +256,8 @@ class App(customtkinter.CTk):
         shutdown_delay_entry,
         interval_delay_entry,
         max_idle_delay_entry,
+        auto_shutdown_label,
+        auto_shutdown_on_show_end_label,
     ):
         """Applies the settings to the program"""
         self.plex_token = token_entry.get()
@@ -263,6 +271,7 @@ class App(customtkinter.CTk):
         self.computer_idle = float(max_idle_delay_entry.get())
         self.interval_delay = float(interval_delay_entry.get())
         self.shutdown_delay = float(shutdown_delay_entry.get())
+        self.update()
         try:
             self.plex = PlexServer(self.plex_url, self.plex_token)
             write_config(
@@ -272,7 +281,13 @@ class App(customtkinter.CTk):
                 self.interval_delay,
                 self.shutdown_delay,
             )
-            self.show_success("Settings applied")
+            auto_shutdown_label.configure(
+                text=f"Auto Shutdown is currently: {'ON' if self.shutdown_switch_enabled else 'OFF'}"
+            )
+            auto_shutdown_on_show_end_label.configure(
+                text=f"Shutdown when show ends is: {'ON' if self.shutdown_switch_on_show_end_enabled else 'OFF'}"
+            )
+            self.show_success("Settings applied, auto shutdown is now OFF")
         except ConnectionError:
             self.show_error("Connection error")
             return
@@ -287,6 +302,8 @@ class App(customtkinter.CTk):
         shutdown_delay_entry,
         interval_delay_entry,
         max_idle_delay_entry,
+        auto_shutdown_label,
+        auto_shutdown_on_show_end_label,
     ):
         """Resets the settings to the default values"""
         self.plex_token = default_plex_token
@@ -310,6 +327,14 @@ class App(customtkinter.CTk):
         max_idle_delay_entry.delete(0, "end")
         max_idle_delay_entry.insert(0, self.computer_idle)
 
+        auto_shutdown_label.configure(
+            text=f"Auto Shutdown is currently: {'ON' if self.shutdown_switch_enabled else 'OFF'}"
+        )
+
+        auto_shutdown_on_show_end_label.configure(
+            text=f"Shutdown when show ends is: {'ON' if self.shutdown_switch_on_show_end_enabled else 'OFF'}"
+        )
+
         write_config(
             self.plex_url,
             self.plex_token,
@@ -317,7 +342,7 @@ class App(customtkinter.CTk):
             self.interval_delay,
             self.shutdown_delay,
         )
-        self.show_success("Settings reseted")
+        self.show_success("Settings reseted, auto shutdown is now OFF")
 
     def open_url(self, url):
         """Opens a web browser with the given url"""

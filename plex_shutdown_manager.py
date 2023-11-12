@@ -46,7 +46,7 @@ class PlexShutdownManager:
                 ["tasklist", "/fi", f"imagename eq {'Plex Media Server.exe'}"],
                 capture_output=True,
                 text=True,
-                check=True,
+                shell=True,
             )
             # Check if the process name is in the output
             if "Plex Media Server.exe".lower() in result.stdout.lower():
@@ -56,7 +56,7 @@ class PlexShutdownManager:
                 ["tasklist", "/fi", f"imagename eq {'Plex Transcoder.exe'}"],
                 capture_output=True,
                 text=True,
-                check=True,
+                shell=True,
             )
             if "Plex Transcoder.exe".lower() in result.stdout.lower():
                 transcoder_running = True
@@ -72,7 +72,13 @@ class PlexShutdownManager:
     def cancel_shutdown(self):
         """Cancels the shutdown"""
         print("Auto-shutdown aborted")
-        os.system("shutdown -a")
+        # os.system("shutdown -a")
+        subprocess.run(
+            ["shutdown", "-a"],
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
         self.shutdown_enabled = False
 
     def activate_shutdown(self, time_in_minutes):
@@ -83,8 +89,21 @@ class PlexShutdownManager:
             + str(time_in_minutes)
             + " seconds"
         )
-        os.system(
-            "shutdown -s -t " + str(int(self.minutes_to_seconds(time_in_minutes)))
+        """ os.system(
+            "shutdown -s -t "
+            + str(int(self.minutes_to_seconds(time_in_minutes)) + '-c " "')
+        ) """
+        subprocess.run(
+            [
+                "shutdown",
+                "-s",
+                "-t",
+                str(self.minutes_to_seconds(time_in_minutes)),
+                '-c " "',
+            ],
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
         self.shutdown_enabled = True
 
