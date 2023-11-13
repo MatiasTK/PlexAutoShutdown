@@ -1,9 +1,12 @@
 # -*- mode: python ; coding: utf-8 -*-
+from PyInstaller.utils.hooks import collect_data_files
+gui_packages = collect_data_files('customtkinter')
+
 a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('./app.py', '.'), ('./config.py', '.'), ('./idle.py', '.'), ('./plex_shutdown_manager.py', '.'), ('./icons', 'icons/')],
+    datas=[('./app.py', '.'), ('./config.py', '.'), ('./idle.py', '.'), ('./plex_shutdown_manager.py', '.'), ('./icons', 'icons/')] + gui_packages,
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
