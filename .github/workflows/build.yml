@@ -22,3 +22,11 @@ jobs:
         with:
           name: Plex.Auto.Shutdown
           path: ./dist/windows
+
+      - name: Upload binaries to Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ./dist/windows/Plex.Auto.Shutdown.exe
+          asset_name: Plex.Auto.Shutdown.exe
+          tag: ${{ github.ref }}
