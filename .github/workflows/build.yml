@@ -1,0 +1,31 @@
+name: Package Application with Pyinstaller
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Package Application
+        uses: JackMcKew/pyinstaller-action-windows@python3-10-pyinstaller-5-3
+        with:
+          path: '.'
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Plex.Auto.Shutdown
+          path: ./dist/windows
+
+      - name: Upload binaries to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ./dist/windows/Plex.Auto.Shutdown.exe
+          draft: True
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_NAME: ${{ github.event_name }} Release ${{ github.sha }}
