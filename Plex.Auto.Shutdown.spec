@@ -1,6 +1,4 @@
 # -*- mode: python ; coding: utf-8 -*-
-
-
 a = Analysis(
     ['main.py'],
     pathex=[],
@@ -34,5 +32,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['icons\\plex.ico'],
+    icon='icons\\plex.ico',
 )
