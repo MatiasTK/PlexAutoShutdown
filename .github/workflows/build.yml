@@ -28,4 +28,4 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           draft: True
-          files: ./dist/windows/Plex.Auto.Shutdown.exe
+          files: Plex.Auto.Shutdown.exe
