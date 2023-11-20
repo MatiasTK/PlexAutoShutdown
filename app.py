@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import webbrowser
-from typing import TYPE_CHECKING
 
 import customtkinter
 import pystray
@@ -23,22 +22,18 @@ from config import (
 
 customtkinter.set_appearance_mode("dark")
 
-if TYPE_CHECKING:
-    from plex_shutdown_manager import PlexShutdownManager
-
 
 class App(customtkinter.CTk):
     """Main GUI class"""
 
     plex: PlexServer = None
-    plex_shutdown_manager: PlexShutdownManager = None
     shutdown_switch_enabled = False
     shutdown_switch_on_show_end_enabled = False
     plex_url = DEFAULT_PLEX_URL
     plex_token = DEFAULT_PLEX_TOKEN
     shutdown_delay = DEFAULT_SHUTDOWN_DELAY
     interval_delay = DEFAULT_INTERVAL_DELAY
-    computer_idle = DEFAULT_COMPUTER_IDLE
+    max_computer_idle = DEFAULT_COMPUTER_IDLE
 
     def __init__(
         self,
@@ -47,7 +42,6 @@ class App(customtkinter.CTk):
         computer_idle,
         interval_delay,
         shutdown_delay,
-        plex_shutdown_manager,
     ):
         super().__init__(fg_color="#2b2b2b")
         if plex_token != DEFAULT_PLEX_TOKEN:
@@ -60,11 +54,10 @@ class App(customtkinter.CTk):
 
         self.plex_url = plex_url
         self.plex_token = plex_token
-        self.computer_idle = computer_idle
+        self.max_computer_idle = computer_idle
         self.interval_delay = interval_delay
         self.shutdown_delay = shutdown_delay
-        self.computer_idle = computer_idle
-        self.plex_shutdown_manager = plex_shutdown_manager
+        self.max_computer_idle = computer_idle
 
         self.title("Plex Auto Shutdown")
         self.resizable(False, False)
@@ -134,7 +127,7 @@ class App(customtkinter.CTk):
         )
         max_idle_delay_entry = customtkinter.CTkEntry(self)
         max_idle_delay_entry.grid(row=7, column=0, padx=10, pady=(0, 10))
-        max_idle_delay_entry.insert(0, self.computer_idle)
+        max_idle_delay_entry.insert(0, self.max_computer_idle)
 
         # Reset Default Values
         customtkinter.CTkButton(
@@ -226,7 +219,6 @@ class App(customtkinter.CTk):
             self.show_success("Auto Shutdown is now ON")
             label.configure(text="Auto Shutdown is currently: ON")
         else:
-            self.plex_shutdown_manager.cancel_shutdown()
             self.show_success("Auto Shutdown is now OFF")
             label.configure(text="Auto Shutdown is currently: OFF")
 
@@ -264,11 +256,10 @@ class App(customtkinter.CTk):
         if self.plex_token == "Your Plex Token Here":
             self.show_error("You need to enter a valid Plex Token first")
             return
-        self.plex_shutdown_manager.cancel_shutdown()
         self.shutdown_switch_enabled = False
         self.shutdown_switch_on_show_end_enabled = False
         self.plex_url = url_entry.get()
-        self.computer_idle = float(max_idle_delay_entry.get())
+        self.max_computer_idle = float(max_idle_delay_entry.get())
         self.interval_delay = float(interval_delay_entry.get())
         self.shutdown_delay = float(shutdown_delay_entry.get())
         self.update()
@@ -277,7 +268,7 @@ class App(customtkinter.CTk):
             write_config(
                 self.plex_url,
                 self.plex_token,
-                self.computer_idle,
+                self.max_computer_idle,
                 self.interval_delay,
                 self.shutdown_delay,
             )
@@ -308,7 +299,7 @@ class App(customtkinter.CTk):
         """Resets the settings to the default values"""
         self.plex_token = DEFAULT_PLEX_TOKEN
         self.plex_url = DEFAULT_PLEX_URL
-        self.computer_idle = DEFAULT_COMPUTER_IDLE
+        self.max_computer_idle = DEFAULT_COMPUTER_IDLE
         self.interval_delay = DEFAULT_INTERVAL_DELAY
         self.shutdown_delay = DEFAULT_SHUTDOWN_DELAY
 
@@ -325,7 +316,7 @@ class App(customtkinter.CTk):
         interval_delay_entry.insert(0, self.interval_delay)
 
         max_idle_delay_entry.delete(0, "end")
-        max_idle_delay_entry.insert(0, self.computer_idle)
+        max_idle_delay_entry.insert(0, self.max_computer_idle)
 
         auto_shutdown_label.configure(
             text=f"Auto Shutdown is currently: {'ON' if self.shutdown_switch_enabled else 'OFF'}"
@@ -338,7 +329,7 @@ class App(customtkinter.CTk):
         write_config(
             self.plex_url,
             self.plex_token,
-            self.computer_idle,
+            self.max_computer_idle,
             self.interval_delay,
             self.shutdown_delay,
         )
@@ -352,9 +343,9 @@ class App(customtkinter.CTk):
         """Returns the status of the shutdown switch"""
         return self.shutdown_switch_enabled
 
-    def get_computer_idle(self):
+    def get_max_computer_idle(self):
         """Returns the computer idle time in minutes"""
-        return self.computer_idle
+        return self.max_computer_idle
 
     def get_plex_instance(self):
         """Returns the plex server instance"""

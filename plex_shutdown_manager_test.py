@@ -18,6 +18,7 @@ class PlexShutdownManagerTest(unittest.TestCase):
     def setUp(self) -> None:
         self.patcher = patch("plex_shutdown_manager.toast")
         self.mock_toast = self.patcher.start()
+        self.app_mock = MagicMock()
 
     def tearDown(self) -> None:
         self.patcher.stop()
@@ -26,13 +27,13 @@ class PlexShutdownManagerTest(unittest.TestCase):
         except subprocess.CalledProcessError:
             print("Shutdown was not canceled")
 
-    def test01_framework(self):
+    def test_01_framework(self):
         """Test if the test framework is working"""
         self.assertEqual(1, 1)
 
-    def test02_activate_shutdown(self):
+    def test_02_activate_shutdown(self):
         """Test if the shutdown is activated"""
-        psm = PlexShutdownManager()
+        psm = PlexShutdownManager(self.app_mock)
         psm.activate_shutdown(SHUTDOWN_DELAY)
         self.assertTrue(psm.shutdown_enabled)
         try:
@@ -41,9 +42,9 @@ class PlexShutdownManagerTest(unittest.TestCase):
             self.fail("Shutdown was not activated")
         assert self.mock_toast.call_count == 1
 
-    def test03_cancel_shutdown(self):
+    def test_03_cancel_shutdown(self):
         """Test if the shutdown is canceled"""
-        psm = PlexShutdownManager()
+        psm = PlexShutdownManager(self.app_mock)
         psm.activate_shutdown(SHUTDOWN_DELAY)
         try:
             psm.cancel_shutdown()
@@ -51,127 +52,113 @@ class PlexShutdownManagerTest(unittest.TestCase):
             self.fail("Shutdown was not canceled")
         assert self.mock_toast.call_count == 1
 
-    def test04_cancel_shutdown_without_activation(self):
+    def test_04_cancel_shutdown_without_activation(self):
         """Test cancel shutdown without activation"""
-        psm = PlexShutdownManager()
+        psm = PlexShutdownManager(self.app_mock)
         self.assertFalse(psm.cancel_shutdown())
         assert self.mock_toast.call_count == 0
 
-    def test05_no_app(self):
+    def test_05_no_app(self):
         """Test plex_shutdown_manager with app being none"""
-        psm = PlexShutdownManager()
+        psm = PlexShutdownManager(None)
         self.assertFalse(psm.check_if_transcoder_running())
         self.assertFalse(psm.check_if_are_active_sessions())
         self.assertFalse(psm.monitor_plex_and_shutdown())
 
-    def test06_transcoder_running_plex_not(self):
+    def test_06_transcoder_running_plex_not(self):
         """Test plex_shutdown_manager with transcoder running but not the plex"""
-        psm = PlexShutdownManager()
-        with patch.object(psm, "app"):
-            with patch("subprocess.run") as mock_run:
-                mock_run.return_value = subprocess.CompletedProcess(
-                    args=[""],
-                    returncode=1,
-                    stdout="Plex Transcoder.exe",
-                )
-                self.assertFalse(psm.check_if_transcoder_running())
+        psm = PlexShutdownManager(self.app_mock)
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = subprocess.CompletedProcess(
+                args=[""],
+                returncode=1,
+                stdout="Plex Transcoder.exe",
+            )
+            self.assertFalse(psm.check_if_transcoder_running())
 
-    def test07_plex_running_transcoder_not(self):
+    def test_07_plex_running_transcoder_not(self):
         """Test plex_shutdown_manager with plex running but not transcoder"""
-        psm = PlexShutdownManager()
-        with patch.object(psm, "app"):
-            with patch("subprocess.run") as mock_run:
-                mock_run.return_value = subprocess.CompletedProcess(
-                    args=[""],
-                    returncode=1,
-                    stdout="Plex Media Server.exe\n",
-                )
-                self.assertFalse(psm.check_if_transcoder_running())
+        psm = PlexShutdownManager(self.app_mock)
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = subprocess.CompletedProcess(
+                args=[""],
+                returncode=1,
+                stdout="Plex Media Server.exe\n",
+            )
+            self.assertFalse(psm.check_if_transcoder_running())
 
-    def test08_plex_running_transcoder_running(self):
+    def test_08_plex_running_transcoder_running(self):
         """Test plex_shutdown_manager with plex and transcoder running"""
-        psm = PlexShutdownManager()
-        with patch.object(psm, "app"):
-            with patch("subprocess.run") as mock_run:
-                mock_run.return_value = subprocess.CompletedProcess(
-                    args=[""],
-                    returncode=1,
-                    stdout="Plex Media Server.exe\n Plex Transcoder.exe",
-                )
-                self.assertTrue(psm.check_if_transcoder_running())
+        psm = PlexShutdownManager(self.app_mock)
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = subprocess.CompletedProcess(
+                args=[""],
+                returncode=1,
+                stdout="Plex Media Server.exe\n Plex Transcoder.exe",
+            )
+            self.assertTrue(psm.check_if_transcoder_running())
 
-    def test09_no_active_sessions(self):
+    def test_09_no_active_sessions(self):
         """Test plex_shutdown_manager with no active sessions"""
-        psm = PlexShutdownManager()
-        with patch.object(psm, "app") as mock_app:
-            plex_mock = MagicMock()
-            plex_mock.sessions.return_value = []
-            mock_app.get_plex_instance.return_value = plex_mock
+        psm = PlexShutdownManager(self.app_mock)
+        plex_mock = MagicMock()
+        plex_mock.sessions.return_value = []
+        self.app_mock.get_plex_instance.return_value = plex_mock
 
-            self.assertFalse(psm.check_if_are_active_sessions())
+        self.assertFalse(psm.check_if_are_active_sessions())
 
-    def test10_active_sessions(self):
+    def test_10_active_sessions(self):
         """Test plex_shutdown_manager with active sessions"""
-        psm = PlexShutdownManager()
-        with patch.object(psm, "app") as mock_app:
-            plex_mock = MagicMock()
-            plex_mock.sessions.return_value = ["test", "test2"]
-            mock_app.get_plex_instance.return_value = plex_mock
+        psm = PlexShutdownManager(self.app_mock)
 
-            self.assertTrue(psm.check_if_are_active_sessions())
+        plex_mock = MagicMock()
+        plex_mock.sessions.return_value = ["test", "test2"]
+        self.app_mock.get_plex_instance.return_value = plex_mock
 
-    def test11_minute_to_seconds(self):
+        self.assertTrue(psm.check_if_are_active_sessions())
+
+    def test_11_minute_to_seconds(self):
         """Test plex_shutdown_manager with minute to seconds conversion"""
-        self.assertEqual(PlexShutdownManager().minutes_to_seconds(1), 60)
+        self.assertEqual(PlexShutdownManager(None).minutes_to_seconds(1), 60)
 
-    def test12_monitor_without_app_or_switch_disabled(self):
+    def test_12_monitor_without_app_or_switch_disabled(self):
         """Test plex_shutdown_manager monitor with app shutdown switch disabled"""
-        psm = PlexShutdownManager()
+        self.app_mock.get_shutdown_status.return_value = False
+        psm = PlexShutdownManager(self.app_mock)
         self.assertEqual(psm.monitor_plex_and_shutdown(), NO_ACTIVATION)
-        with patch.object(psm, "app") as mock_app:
-            mock_app.get_shutdown_status.return_value = False
-            self.assertEqual(psm.monitor_plex_and_shutdown(), NO_ACTIVATION)
 
-    def test13_monitor_not_idling(self):
+    def test_13_monitor_not_idling(self):
         """Test plex_shutdown_manager monitor with app shutdown switch enabled and not idling"""
-        psm = PlexShutdownManager()
-        with patch.object(psm, "app"), patch.object(
-            psm, "minutes_to_seconds", return_value=60
-        ), patch("plex_shutdown_manager.get_idle_duration", return_value=10):
-            self.assertEqual(psm.monitor_plex_and_shutdown(), NO_ACTIVATION)
-
-    def test14_monitor_transcoder_not_running(self):
-        """Test plex_shutdown_manager monitor with app shutdown switch enabled and idling but transcoder not running"""
-        psm = PlexShutdownManager()
-        with patch.object(psm, "app"), patch.object(
-            psm, "minutes_to_seconds", return_value=60
-        ), patch(
-            "plex_shutdown_manager.get_idle_duration", return_value=70
-        ), patch.object(
-            psm, "check_if_transcoder_running", return_value=False
+        psm = PlexShutdownManager(self.app_mock)
+        with patch.object(psm, "minutes_to_seconds", return_value=60), patch(
+            "plex_shutdown_manager.get_idle_duration", return_value=10
         ):
             self.assertEqual(psm.monitor_plex_and_shutdown(), NO_ACTIVATION)
 
-    def test15_monitor_no_active_sessions(self):
-        """Test plex_shutdown_manager monitor with app shutdown switch enabled and idling but no active sessions"""
-        psm = PlexShutdownManager()
-        with patch.object(psm, "app"), patch.object(
-            psm, "minutes_to_seconds", return_value=60
-        ), patch(
+    def test_14_monitor_transcoder_not_running(self):
+        """Test plex_shutdown_manager monitor with app shutdown switch enabled and idling and transcoder running"""
+        psm = PlexShutdownManager(self.app_mock)
+        with patch.object(psm, "minutes_to_seconds", return_value=60), patch(
+            "plex_shutdown_manager.get_idle_duration", return_value=70
+        ), patch.object(psm, "check_if_transcoder_running", return_value=True):
+            self.assertEqual(psm.monitor_plex_and_shutdown(), NO_ACTIVATION)
+
+    def test_15_monitor_no_active_sessions(self):
+        """Test plex_shutdown_manager monitor with app shutdown switch enabled and idling and an active session"""
+        psm = PlexShutdownManager(self.app_mock)
+        with patch.object(psm, "minutes_to_seconds", return_value=60), patch(
             "plex_shutdown_manager.get_idle_duration", return_value=70
         ), patch.object(
             psm, "check_if_transcoder_running", return_value=False
         ), patch.object(
-            psm, "check_if_are_active_sessions", return_value=False
+            psm, "check_if_are_active_sessions", return_value=True
         ):
             self.assertEqual(psm.monitor_plex_and_shutdown(), NO_ACTIVATION)
 
-    def test16_monitor_shutdown_enabled(self):
+    def test_16_monitor_shutdown_enabled(self):
         """Test plex_shutdown_manager monitor with app shutdown switch enabled and idling but no active sessions"""
-        psm = PlexShutdownManager()
-        with patch.object(psm, "app"), patch.object(
-            psm, "minutes_to_seconds", return_value=60
-        ), patch(
+        psm = PlexShutdownManager(self.app_mock)
+        with patch.object(psm, "minutes_to_seconds", return_value=60), patch(
             "plex_shutdown_manager.get_idle_duration", return_value=70
         ), patch.object(
             psm, "check_if_transcoder_running", return_value=False
@@ -182,12 +169,10 @@ class PlexShutdownManagerTest(unittest.TestCase):
         ):
             self.assertEqual(psm.monitor_plex_and_shutdown(), NO_ACTIVATION)
 
-    def test17_monitor_cancel_activation(self):
+    def test_17_monitor_cancel_activation(self):
         """Test plex_shutdown_manager monitor with app shutdown switch enabled and shutdown activated but not idling"""
-        psm = PlexShutdownManager()
-        with patch.object(psm, "app"), patch.object(
-            psm, "minutes_to_seconds", return_value=60
-        ), patch(
+        psm = PlexShutdownManager(self.app_mock)
+        with patch.object(psm, "minutes_to_seconds", return_value=60), patch(
             "plex_shutdown_manager.get_idle_duration", return_value=10
         ), patch.object(
             psm, "check_if_transcoder_running", return_value=False
@@ -200,19 +185,42 @@ class PlexShutdownManagerTest(unittest.TestCase):
 
     def test_18_monitor_activate_shutdown(self):
         """Test plex_shutdown_manager monitor with app shutdown switch enabled and shutdown not activated and idling"""
-        psm = PlexShutdownManager()
-        with patch.object(psm, "app"), patch.object(
-            psm, "minutes_to_seconds", return_value=60
-        ), patch(
+        psm = PlexShutdownManager(self.app_mock)
+        with patch.object(psm, "minutes_to_seconds", return_value=60), patch(
             "plex_shutdown_manager.get_idle_duration", return_value=70
         ), patch.object(
-            psm, "check_if_transcoder_running", return_value=True
+            psm, "check_if_transcoder_running", return_value=False
         ), patch.object(
             psm, "check_if_are_active_sessions", return_value=False
         ), patch.object(
             psm, "shutdown_enabled", False
         ):
             self.assertEqual(psm.monitor_plex_and_shutdown(), ACTIVATED_SHUTDOWN)
+
+    def test_19_shutdown_enabled_now_not_idling(self):
+        psm = PlexShutdownManager(self.app_mock)
+        with patch.object(psm, "minutes_to_seconds", return_value=60), patch(
+            "plex_shutdown_manager.get_idle_duration", return_value=1
+        ), patch.object(psm, "shutdown_enabled", True):
+            self.assertEqual(psm.monitor_plex_and_shutdown(), CANCELED_SHUTDOWN)
+
+    def test_20_shutdown_enabled_new_session(self):
+        psm = PlexShutdownManager(self.app_mock)
+        with patch.object(psm, "minutes_to_seconds", return_value=60), patch(
+            "plex_shutdown_manager.get_idle_duration", return_value=120
+        ), patch.object(psm, "shutdown_enabled", True), patch.object(
+            psm, "check_if_are_active_sessions", return_value=True
+        ):
+            self.assertEqual(psm.monitor_plex_and_shutdown(), CANCELED_SHUTDOWN)
+
+    def test_21_shutdown_enabled_still_idling_no_new_session(self):
+        psm = PlexShutdownManager(self.app_mock)
+        with patch.object(psm, "minutes_to_seconds", return_value=60), patch(
+            "plex_shutdown_manager.get_idle_duration", return_value=120
+        ), patch.object(psm, "shutdown_enabled", True), patch.object(
+            psm, "check_if_are_active_sessions", return_value=False
+        ):
+            self.assertEqual(psm.monitor_plex_and_shutdown(), NO_ACTIVATION)
 
 
 if __name__ == "__main__":

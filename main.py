@@ -1,4 +1,5 @@
 """ Main entry point for the application. """
+import subprocess
 from threading import Thread
 
 from app import App
@@ -13,19 +14,22 @@ if __name__ == "__main__":
         interval_delay,
         shutdown_delay,
     ) = load_config()
-    shutdown_manager = PlexShutdownManager()
     app = App(
         plex_url,
         plex_token,
         computer_idle,
         interval_delay,
         shutdown_delay,
-        shutdown_manager,
     )
+    shutdown_manager = PlexShutdownManager(app)
     background = Thread(
         target=shutdown_manager.monitor_mainloop,
-        args=(app,),
         daemon=True,
     )
     app.after(1000, background.start)
     app.mainloop()
+
+    try:
+        subprocess.run(["shutdown", "-a"], check=True)
+    except subprocess.CalledProcessError:
+        print("Tear down failed to cancel shutdown")
