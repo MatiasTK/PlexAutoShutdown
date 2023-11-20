@@ -2,7 +2,7 @@ name: Testing App
 
 on:
   workflow_run:
-    workflows: ['build']
+    workflows: ['Package Application with Pyinstaller']
     branches: [main]
     types:
       - completed
