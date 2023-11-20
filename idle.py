@@ -1,7 +1,10 @@
+""" This module contains functions to prevent the OS from going to sleep and to get the last input event. """
 from ctypes import Structure, windll, c_uint, sizeof, byref
 
 
 class LASTINPUTINFO(Structure):
+    """Struct for the last input event."""
+
     _fields_ = [
         ("cbSize", c_uint),
         ("dwTime", c_uint),
@@ -9,6 +12,7 @@ class LASTINPUTINFO(Structure):
 
 
 def get_idle_duration():
+    """Returns the number of seconds since the last input event."""
     lastInputInfo = LASTINPUTINFO()
     lastInputInfo.cbSize = sizeof(lastInputInfo)
     windll.user32.GetLastInputInfo(byref(lastInputInfo))
@@ -29,11 +33,13 @@ class WindowsInhibitor:
         pass
 
     def inhibit(self):
+        """Disable Windows sleep/hibernate"""
         print("Preventing Windows from going to sleep")
         windll.kernel32.SetThreadExecutionState(
             WindowsInhibitor.ES_CONTINUOUS | WindowsInhibitor.ES_SYSTEM_REQUIRED
         )
 
     def uninhibit(self):
+        """Enable Windows sleep/hibernate"""
         print("Allowing Windows to go to sleep")
         windll.kernel32.SetThreadExecutionState(WindowsInhibitor.ES_CONTINUOUS)
